@@ -1,5 +1,4 @@
-# wiegleb
-Solving Wiegleb peg solitaire with Temporal Difference Learning, N-tuple and Java.
+# Solving Wiegleb peg solitaire with Temporal Difference Learning, N-tuple and Java.
 
 Features:
 - Board is represented by an int[] matrix as:
