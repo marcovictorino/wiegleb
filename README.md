@@ -9,5 +9,3 @@ Features:
 - Exploration rate start at 0.1 and decays gaussian.
 - The global learning rate decays exponentially from 0.005 to 0.002.
 - The Gui application wiegleb.java need  JFreeChart package to show graphics.
-- 
-   
