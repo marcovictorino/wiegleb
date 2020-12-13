@@ -7,7 +7,9 @@ package com.mycompany.wiegleb;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -30,9 +32,12 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
@@ -60,13 +65,15 @@ public class wiegleb implements ActionListener{
   
   graficos g;
   
-  double  aleatIn,aleatFim,alfaIn,alfaFim,LAMBDA,GAMMA;
+  double  aleatIn,aleatFim,alfaIn,alfaFim,LAMBDA,GAMMA,GAUSSIANK;
   
   DecimalFormat df,df1;
   
   int NEP,NW;
   
   long start;
+  
+  
   
   //-----------------------------------
   private final JFrame frame;
@@ -99,18 +106,24 @@ public class wiegleb implements ActionListener{
   
   private final JButton btnExecutar;
   
+  private JTable tBoard;
+  
+  private DefaultTableModel model;
   //------------------------------------------------
   wiegleb(){
       
+      
       frame = new JFrame("Peg solitaire w/ Ntuple and Eligibility Trace");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-      frame.setSize(900,600);
+      frame.setSize(900,700);
       
       panel = new JPanel(); 
       panel.setLayout(new GridLayout(5,3));
       panel.setBorder(BorderFactory.createLineBorder(Color.BLUE));
       
       this.b0 = new Board();
+      
+      b0.inicializa();
       
       Border border = LineBorder.createGrayLineBorder();
       
@@ -161,6 +174,10 @@ public class wiegleb implements ActionListener{
           
           GAMMA = Double.parseDouble(currentLine);
           
+          currentLine = reader.readLine();
+          
+          GAUSSIANK = Double.parseDouble(currentLine);
+          
           reader.close();
           
       }catch(IOException e) {System.out.println("Arquivo nao encontrado");}
@@ -177,7 +194,7 @@ public class wiegleb implements ActionListener{
       
       ut = new uteis();
       
-      aleatFim = ut.gaussianDecai(NEP,aleatIn);
+      aleatFim = ut.gaussianDecai(NEP,aleatIn,GAUSSIANK);
       
       df = new DecimalFormat("0.####");
       
@@ -202,8 +219,8 @@ public class wiegleb implements ActionListener{
       
       lblGamma.setBorder(border);
       
-      chkSalvar = new JCheckBox("Salvar weights");
-      chkLer = new JCheckBox("Ler weights");
+      chkSalvar = new JCheckBox("Save weights");
+      chkLer = new JCheckBox("Read weights");
       chkUpdate = new JCheckBox("Update weights");
       
       chkSalvar.setSelected(true);
@@ -235,7 +252,7 @@ public class wiegleb implements ActionListener{
       //-------------------------------------------      
       g = new graficos();
       
-      gPanel = criaGrafico("Scores","game/1000","scores");
+      gPanel = criaGrafico("Scores","game/1000","score/min(%)");
       
       gPanel2 = criaGrafico2("Explor. rate","game/1000","Explor. rate");
       
@@ -248,23 +265,32 @@ public class wiegleb implements ActionListener{
       
       
       panelResultados = new JPanel(); 
-      panelResultados.setLayout(new GridLayout(1,1));
+      panelResultados.setLayout(new GridLayout(1,2));
       panelResultados.setBorder(BorderFactory.createLineBorder(Color.BLUE));
       
-      txtResultados = new JTextArea(7,30);
+      txtResultados = new JTextArea(10,30);
       JScrollPane scrollPane = new JScrollPane(txtResultados);
       txtResultados.setEditable(false);
       txtResultados.setLineWrap(true);
       txtResultados.setBorder(border);
+ 
       
       
+      tBoard = new JTable(createTable(b0));
       
-
+      tBoard.setPreferredScrollableViewportSize(new Dimension(10,10));
+      tBoard.setFillsViewportHeight(true);
+      
+      DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+      centerRenderer.setHorizontalAlignment( JLabel.CENTER );
+      
+      for(int i=0;i<9;i++)
+          tBoard.getColumnModel().getColumn(i).setCellRenderer( centerRenderer );
+      
       
       panelResultados.add(txtResultados);
-      
-      //panelResultados.add(btnExecutar);
-      
+      panelResultados.add(tBoard);
+  
       frame.getContentPane().add(BorderLayout.NORTH, panel);
       frame.getContentPane().add(BorderLayout.CENTER,panelGraficos);
       frame.getContentPane().add(BorderLayout.SOUTH,panelResultados);
@@ -282,7 +308,7 @@ public class wiegleb implements ActionListener{
      
       
       double rangeIn=0.0;
-      double rangeOut=1.0;
+      double rangeOut=100.0;
       
       XYDataset dataset = g.createDataset(x,y,titulo);
       
@@ -306,7 +332,7 @@ public class wiegleb implements ActionListener{
      
       
       double rangeIn=0.0;
-      double rangeOut=0.1;
+      double rangeOut=aleatIn;
       
       XYDataset dataset = g.createDataset(x,y,titulo);
       
@@ -331,191 +357,16 @@ public class wiegleb implements ActionListener{
               
               start =  System.currentTimeMillis();
               
+              txtResultados.setText("*** Starting ***");
+              
               new Thread(t1).start();
               
           }catch(Exception ex){System.out.println("nao executado");}  
       }
   }
   //------------------------------------------------
+  public  Runnable t1 = new RunnableImpl();
   
-  public  Runnable t1 = new Runnable() {
-      @Override
-      public void run(){
-         
-          try{
-              
-            ArrayList<Integer> rota = new ArrayList<>();
-            
-            ArrayList<Integer> rotaOtima = new ArrayList<>();
-            
-            ArrayList<Integer> movAleat = new ArrayList<>();
-            
-            ArrayList<Double> histnG = new ArrayList<>();
-            
-            ArrayList<Double> histScore = new ArrayList<>();
-            
-            ArrayList<Double> histAleat = new ArrayList<>();
-            
-            playerResta1 p1 = new playerResta1();
-            
-            tdLearning td = new tdLearning(NW,GAMMA,LAMBDA);
-            
-            double score1=0,score2=0,scoreBack=0;
-            int intervBack=0;
-            
-            if(chkLer.isSelected())
-                td.readingWeights();
-            
-            corrida = new File("corrida.log");
-            
-            double score=0;
-            
-            //----------------------------------------------
-            for(int nG=0;nG<NEP;nG++){ 
-                 
-                Board b = new Board();
-                 
-                b.inicializa();
-                 
-                rota.clear();movAleat.clear();   
-                
-                 
-                double aleat = ut.gaussianDecai(nG,aleatIn);
-                
-                double alfa = ut.ExpDecai(nG,NEP,alfaIn,alfaFim);
-                
-                while(true){
-                    
-                    Board bOld = new Board();
-                    
-                    for(int i=0;i<b.getNcel();i++)
-                       bOld.setItem(i,b.getItem(i));
-                    
-                    int choice = p1.play(b,aleat,td.getW());
-                    
-                    b.setMove(choice);
-                    
-                    rota.add(choice); 
-                    
-                    if(p1.getFgreed() == false)
-                        movAleat.add(choice);
-                    
-                    if(chkUpdate.isSelected()){
-                        if(p1.getFgreed() || b.geraCand().isEmpty())
-                            td.updateWgame(bOld,b,alfa);
-                    }
-                    
-                    if(b.geraCand().isEmpty())
-                        break;
-                }
-                
-                if(b.calcR1() == 1){
-                    score1 +=1;
-                    rotaOtima.clear();
-                    for(int i=0;i<rota.size();i++)
-                        rotaOtima.add(rota.get(i));
-                }
-                else
-                    score2+=1;
-                
-                long end  = System.currentTimeMillis();
-                
-                var tempo = (end-start)/1000;
-                
-                if(end/1000 % 60 == 0){
-                    
-                    double deltaScore = score1 - scoreBack;
-                    
-                    int interv = nG - intervBack;
-                    
-                    double ss = score1+score2;
-                    
-                    
-                    
-                    System.out.printf("\n\n================================ Episodio: (%d)\n",nG);
-                    
-                    b.printBoard();
-                    
-                    if(rotaOtima.size()  > 0){
-                        System.out.println("Puzzle solved");
-                        ut.imprime_x(rotaOtima);
-                    }
-                    
-                    System.out.println("----------------------------------------------------------------------:");
-                    System.out.println("rota atual:");
-                    imprime_x(rota,movAleat);
-                    
-                    
-                    salvarResultados(corrida,nG,b,rotaOtima);
-                    
-                    
-                    int wT = td.freqMais1()+td.freqMenos1();
-                    
-                    scoreBack = score1;intervBack = nG;
-                    
-                    score = deltaScore/interv;                        
-                            
-                    double wAtivados1 = (double) wT/NW;
-                    
-                    double q = (double)nG/1000;
-                    
-                    histnG.add(q);
-                    histScore.add(score);
-                    histAleat.add(aleat);
-                    
-                    
-                    atualizaGrafico(histnG,histScore,chart,gPanel,"Scores");               
-                    
-                    
-                    atualizaGrafico(histnG,histAleat,chart2,gPanel2,"Explor. rate");                  
-                    
-                    
-                    df1 = new DecimalFormat("0.##");
-                    
-                    NumberFormat perc = NumberFormat.getPercentInstance();
-                    
-                    perc.setMinimumFractionDigits(2);
-                    
-                    
-                    txtResultados.setText("N.games = " + Integer.toString(nG) + "   Tempo = " + df1.format(tempo/3600.0)+ "hs   " + Long.toString(tempo/60) + "min  " +
-                            " Scores: " + perc.format(score1/ss) + "|" + perc.format(score2/ss));
-                    
-                                   
-                    txtResultados.append("\nAlfa = " + df.format(alfa) + "    Explor. = " + df.format(aleat));
-                    
-                    txtResultados.append("\nWeights Min/Max -> (" + df.format(td.wMin()) + ")(" +  df.format(td.wMax())  + ")" + " Acertos Totais = "
-                            + score1 + " Score/min = " + perc.format(score));
-                    
-                    double freqMais = (double)td.freqMais1()/NW;
-                    double freqMenos = (double)td.freqMenos1()/NW;
-                    
-                    txtResultados.append("\nW. ativados = " + perc.format(wAtivados1) + "     w+ = " + perc.format(freqMais) + "   w- = " + perc.format(freqMenos));
-                    
-                    
-                    Map mapaInicial = custoInicial(td);
-                    
-                    txtResultados.append("\nvalores iniciais:\n");
-                    
-                    
-                    for(Object key : mapaInicial.keySet())
-                        txtResultados.append("(" + String.valueOf(key) + "," + df.format(mapaInicial.get(key)) + ")");
-                    
-                    try { Thread.sleep (1000); } catch (InterruptedException ex) {ex.printStackTrace();}
-                    
-                }
-                
-                if(score >= 0.80)
-                    break;
-            }
-            
-            if(chkSalvar.isSelected())
-              td.savingWeights();
-            
-            JOptionPane.showMessageDialog(frame, "****** OK *****");
-            
-          }catch (Exception e){System.out.println("nao iniciado");}
-      }
-  };
   
   //------------------------------------------------------
   
@@ -578,12 +429,13 @@ public class wiegleb implements ActionListener{
       
   }
   
-  void salvarResultados(File corrida,int nG,Board b,ArrayList<Integer> rota){
+  void salvarResultados(File corrida,int nG,Board b,ArrayList<Integer> rota)
+  {
       try{
           
-          FileWriter fw = new FileWriter(corrida, true);
+          FileWriter fw1 = new FileWriter(corrida, true);
           
-          try (BufferedWriter bw = new BufferedWriter(fw)) {
+          try (BufferedWriter bw = new BufferedWriter(fw1)) {
               bw.write("================================================================ episodio: " + String.valueOf(nG));
               bw.newLine();
               bw.write("----------------------------------");
@@ -624,6 +476,301 @@ public class wiegleb implements ActionListener{
               
           }
       }catch(IOException e) {System.out.println("Arquivo nao encontrado");}
+  }
+  //------------------------------------------------------
+  void showSolution(ArrayList<Integer> rota){
+      
+      
+     
+     if(rota.size() > 0){
+         
+         System.out.println("============================= PUZZLE SOLVED =================================== ");
+         
+         Board b = new Board();
+         
+         b.inicializa();
+         
+         b.printBoard();
+         
+         for(int i=0;i<rota.size();i++){
+             int mov = rota.get(i);
+             
+             b.setMove(mov);
+             
+             b.printBoard();
+             
+             b.imprimeMove(mov);
+             
+             System.out.println("-----------------------------");
+             
+         }
+     } 
+  }
+
+  private class RunnableImpl implements Runnable {
+
+        public RunnableImpl() {
+        }
+
+        @Override
+        public void run(){
+            
+            try{
+                
+                ArrayList<Integer> rota = new ArrayList<>();
+                
+                ArrayList<Integer> rotaOtima = new ArrayList<>();
+                
+                ArrayList<Integer> movAleat = new ArrayList<>();
+                
+                ArrayList<Double> histnG = new ArrayList<>();
+                
+                ArrayList<Double> histScore = new ArrayList<>();
+                
+                ArrayList<Double> histAleat = new ArrayList<>();
+                
+                playerResta1 p1 = new playerResta1();
+                
+                tdLearning td = new tdLearning(NW,GAMMA,LAMBDA);
+                
+                double score1=0,score2=0,scoreBack=0;
+                int intervBack=0;
+                
+                if(chkLer.isSelected())
+                    td.readingWeights();
+                
+                corrida = new File("corrida.log");
+                
+                double score=0;
+                
+                NumberFormat perc = NumberFormat.getPercentInstance();
+                perc.setMinimumFractionDigits(2);
+
+                
+                //----------------------------------------------
+                for(int nG=0;nG<NEP;nG++){
+                    
+                    Board b = new Board();
+                    
+                    b.inicializa();
+                    
+                    rota.clear();movAleat.clear();
+                    
+                    
+                    double aleat = ut.gaussianDecai(nG,aleatIn,GAUSSIANK);
+                    
+                    double alfa = ut.ExpDecai(nG,NEP,alfaIn,alfaFim);
+                    
+                    while(true){
+                        
+                        Board bOld = new Board();
+                        
+                        for(int i=0;i<b.getNcel();i++)
+                            bOld.setItem(i,b.getItem(i));
+                        
+                        int choice = p1.play(b,aleat,td.getW());
+                        
+                        b.setMove(choice);
+                        
+                        rota.add(choice);
+                        
+                        if(p1.getFgreed() == false)
+                            movAleat.add(choice);
+                        
+                        if(chkUpdate.isSelected()){
+                            if(p1.getFgreed() || b.geraCand().isEmpty())
+                                td.updateWgame(bOld,b,alfa);
+                        }
+                        
+                        if(b.geraCand().isEmpty())
+                            break;
+                    }
+                    
+                    if(b.calcR1() == 1){
+                        score1 +=1;
+                        rotaOtima.clear();
+                        for(int i=0;i<rota.size();i++)
+                            rotaOtima.add(rota.get(i));
+                    }
+                    else
+                        score2+=1;
+                    
+                    long end  = System.currentTimeMillis();
+                    
+                    var tempo = (end-start)/1000;
+                    
+                    if(end/1000 % 60 == 0){
+                                 
+                        
+                        updateTable(b);
+                        
+                        
+                        double deltaScore = score1 - scoreBack;
+                        
+                        int interv = nG - intervBack;
+                        
+                        double ss = score1+score2;
+                        
+                        salvarResultados(corrida,nG,b,rotaOtima);
+                        
+                        int wT = td.freqMais1()+td.freqMenos1();
+                        
+                        scoreBack = score1;intervBack = nG;
+                        
+                        score = deltaScore/interv;
+                        
+                        double wAtivados1 = (double) wT/NW;
+                        
+                        double q = (double)nG/1000;
+                        
+                        histnG.add(q);
+                        histScore.add(score*100);
+                        histAleat.add(aleat);
+                        
+                        
+                        atualizaGrafico(histnG,histScore,chart,gPanel,"Scores");
+                        
+                        
+                        atualizaGrafico(histnG,histAleat,chart2,gPanel2,"Explor. rate");
+                        
+                        
+                        df1 = new DecimalFormat("0.##");
+                        
+                        
+                        txtResultados.setText("[N.games = " + Integer.toString(nG) + "] " + "[Run time = " + df1.format(tempo/3600.0)+ "hs;" + Long.toString(tempo/60) + "min]\n");
+                        
+                        txtResultados.append("\n[Scores(%) =  " + perc.format(score1/ss) +"] " +  "[Total score = " + score1 +"] " +    "[Score/min = " + perc.format(score)+"]\n");
+                        
+                        txtResultados.append("\nAlfa = " + df.format(alfa) + "    Explor. = " + df.format(aleat)+"\n");
+                        
+                        txtResultados.append("\nWeights Min/Max -> (" + df.format(td.wMin()) + ")(" +  df.format(td.wMax())  + ")");
+                        
+                        double freqMais = (double)td.freqMais1()/NW;
+                        
+                        double freqMenos = (double)td.freqMenos1()/NW;
+                        
+                        txtResultados.append("\nW. activated = " + perc.format(wAtivados1) + "     w+ = " + perc.format(freqMais) + "   w- = " + perc.format(freqMenos)+"\n");
+                        
+                        
+                        Map mapaInicial = custoInicial(td);
+                        
+                        txtResultados.append("\nInitial Moves Values:\n");
+                        
+                        
+                        mapaInicial.keySet().forEach(key -> {
+                            txtResultados.append("(move: " + String.valueOf(key) + " -> value: " + df.format(mapaInicial.get(key)) + ")");
+                        });
+                        
+                        try { Thread.sleep (1000); } catch (InterruptedException ex) {}
+                        
+                    }
+                    
+                    if(score >= 0.90){
+                        txtResultados.append("\n[Score/min = " + perc.format(score)+ "]" );
+                        break;
+                    }
+                    
+                }
+                
+                if(chkSalvar.isSelected())
+                    td.savingWeights();
+                
+                showSolution(rotaOtima);
+                
+                JOptionPane.showMessageDialog(frame, "****** OK *****");
+                
+            }catch (HeadlessException e){System.out.println("nao iniciado");}
+        }
+    }
+    
+  void showBoard(Board b){
+              txtBoard.setText("\n" + "     " + b.getX(0)  + b.getX(1) + b.getX(2));
+   
+              txtBoard.append("\n" +  "     " + b.getX(3)  + b.getX(4) +  b.getX(5));
+              
+              txtBoard.append("\n" +  "     " + b.getX(6) +  b.getX(7) +  b.getX(8));
+             
+              txtBoard.append("\n" + b.getX(9) +  b.getX(10)  + b.getX(11)  + b.getX(12)  + b.getX(13)+ b.getX(14)+  b.getX(15) +  b.getX(16) +b.getX(17));
+              
+              txtBoard.append("\n" + b.getX(18) +  b.getX(19)  + b.getX(20)  + b.getX(21)  + b.getX(22) + b.getX(23) + b.getX(24) + b.getX(25)+  b.getX(26));
+              
+              txtBoard.append("\n" + b.getX(27)  + b.getX(28)  + b.getX(29)  + b.getX(30)  + b.getX(31) + b.getX(32) + b.getX(33) + b.getX(34)+ b.getX(35));
+              
+              txtBoard.append("\n     " + b.getX(36)  + b.getX(37) +  b.getX(38));
+             
+              txtBoard.append("\n     " + b.getX(39) +  b.getX(40) +  b.getX(41));
+             
+              txtBoard.append("\n     " + b.getX(42) +  b.getX(43) +  b.getX(44));  
+    }
+    
+  private DefaultTableModel  createTable(Board b){
+        
+        model = new DefaultTableModel();
+        
+        for(int i=0;i<9;i++)
+           model.addColumn("col" + String.valueOf(i));
+        
+        model.addRow(new Object[]{" "," "," ",b.getX(0),b.getX(1),b.getX(2)," "," "," "});
+        model.addRow(new Object[]{" "," "," ",b.getX(3),b.getX(4),b.getX(5)," "," "," "});
+        model.addRow(new Object[]{" "," "," ",b.getX(6),b.getX(7),b.getX(8)," "," "," "});
+        model.addRow(new Object[]{b.getX(9),b.getX(10),b.getX(11),b.getX(12),b.getX(13),b.getX(14),b.getX(15),b.getX(16),b.getX(17)});
+        model.addRow(new Object[]{b.getX(18),b.getX(19),b.getX(20),b.getX(21),b.getX(22),b.getX(23),b.getX(24),b.getX(25),b.getX(26)});
+        model.addRow(new Object[]{b.getX(27),b.getX(28),b.getX(29),b.getX(30),b.getX(31),b.getX(32),b.getX(33),b.getX(34),b.getX(35)});
+        model.addRow(new Object[]{" "," "," ",b.getX(36),b.getX(37),b.getX(38)," "," "," "});
+        model.addRow(new Object[]{" "," "," ",b.getX(39),b.getX(40),b.getX(41)," "," "," "});
+        model.addRow(new Object[]{" "," "," ",b.getX(42),b.getX(43),b.getX(44)," "," "," "});  
+        
+        return model;
+    }
+  
+  private void updateTable(Board b){
+      
+        
+        tBoard.getModel().setValueAt(b.getX(0), 0, 3);
+        tBoard.getModel().setValueAt(b.getX(1), 0, 4);
+        tBoard.getModel().setValueAt(b.getX(2), 0, 5);
+        
+        tBoard.getModel().setValueAt(b.getX(3), 1, 3);
+        tBoard.getModel().setValueAt(b.getX(4), 1, 4);
+        tBoard.getModel().setValueAt(b.getX(5), 1, 5);
+        
+        tBoard.getModel().setValueAt(b.getX(6), 2, 3);
+        tBoard.getModel().setValueAt(b.getX(7), 2, 4);
+        tBoard.getModel().setValueAt(b.getX(8), 2, 5);
+        
+        int i=0;
+        for(int k=9;k<18;k++){
+            tBoard.getModel().setValueAt(b.getX(k), 3, i);
+            
+            i+=1;
+        }
+        
+        i=0;
+        for(int k=18;k<27;k++){
+            tBoard.getModel().setValueAt(b.getX(k), 4, i);
+            
+            i+=1;
+        }    
+     
+        i=0;
+        for(int k=27;k<36;k++){
+            tBoard.getModel().setValueAt(b.getX(k), 5, i);
+            
+            i+=1;
+        }
+        
+        tBoard.getModel().setValueAt(b.getX(36), 6, 3);
+        tBoard.getModel().setValueAt(b.getX(37), 6, 4);
+        tBoard.getModel().setValueAt(b.getX(38), 6, 5);
+        
+        tBoard.getModel().setValueAt(b.getX(39), 7, 3);
+        tBoard.getModel().setValueAt(b.getX(40), 7, 4);
+        tBoard.getModel().setValueAt(b.getX(41), 7, 5);
+        
+        tBoard.getModel().setValueAt(b.getX(42), 8, 3);
+        tBoard.getModel().setValueAt(b.getX(43), 8, 4);
+        tBoard.getModel().setValueAt(b.getX(44), 8, 5);        
+        
   }
 }
 

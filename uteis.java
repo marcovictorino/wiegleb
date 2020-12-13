@@ -14,8 +14,8 @@ import java.util.ArrayList;
 public class uteis {
     
     
-    double gaussianDecai(int nep,double aleatIn){
-       double k = 3000;
+    double gaussianDecai(int nep,double aleatIn,double k){
+       
        return aleatIn/Math.exp(Math.pow(nep/1000.0,2)/k);
     }
     //-------------------------------------------------------------

@@ -74,7 +74,7 @@ public class Board {
     
     String getX(int i){
         
-        String[] w = {".","x"};
+        String[] w = {" ","x"};
         
         return w[x[i]];
         
@@ -245,5 +245,11 @@ public class Board {
             
         }
         return f;
+    }
+    //-------------------------------------------
+    void imprimeMove(int i){
+        
+        System.out.printf("move -> (%d,%d,%d)\n",m[i][0],m[i][1],m[i][2]);
+        
     }
 }
