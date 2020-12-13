@@ -449,9 +449,9 @@ public class wiegleb implements ActionListener{
               bw.newLine();
               bw.write("  012345678");
               bw.newLine();
-              bw.write("0 " +"    " + b.getX(0)  + b.getX(1) + b.getX(2));
+              bw.write("0 " +"   " + b.getX(0)  + b.getX(1) + b.getX(2));
               bw.newLine();
-              bw.write("1 " +"    " + b.getX(3)  + b.getX(4) +  b.getX(5));
+              bw.write("1 " +"   " + b.getX(3)  + b.getX(4) +  b.getX(5));
               bw.newLine();
               bw.write("2 "+"   " + b.getX(6) +  b.getX(7) +  b.getX(8));
               bw.newLine();
@@ -461,19 +461,20 @@ public class wiegleb implements ActionListener{
               bw.newLine();
               bw.write("5 " + b.getX(27)  + b.getX(28)  + b.getX(29)  + b.getX(30)  + b.getX(31) + b.getX(32) + b.getX(33) + b.getX(34)+ b.getX(35));
               bw.newLine();
-              bw.write("6 " +"    " + b.getX(36)  + b.getX(37) +  b.getX(38));
+              bw.write("6 " +"   " + b.getX(36)  + b.getX(37) +  b.getX(38));
               bw.newLine();
-              bw.write("7 " +"    " + b.getX(39) +  b.getX(40) +  b.getX(41));
+              bw.write("7 " +"   " + b.getX(39) +  b.getX(40) +  b.getX(41));
               bw.newLine();
-              bw.write("8 " +"    " + b.getX(42) +  b.getX(43) +  b.getX(44));
+              bw.write("8 " +"   " + b.getX(42) +  b.getX(43) +  b.getX(44));
               bw.newLine();
               bw.write("----------------------------------");
               bw.newLine();
               
-              int[] a = ut.moveToLocation(b.getMov(mov)[0],COL);
-              int[] z = ut.moveToLocation(b.getMov(mov)[2],COL);
+              int[] a = b.getMov(mov);
+              int[] z1 = b.getXY(a[0]);
+              int[] z2 = b.getXY(a[2]);
               
-              bw.write("move = " + "(" + String.valueOf(a[0]) + "," + String.valueOf(a[1]) + ")" + " -> " + "(" + String.valueOf(z[0]) + "," + String.valueOf(z[1]) + ")");
+              bw.write("move = " + "(" + String.valueOf(z1[0]) + "," + String.valueOf(z1[1]) + ")" + " -> " + "(" + String.valueOf(z2[0]) + "," + String.valueOf(z2[1]) + ")");
               bw.newLine();
               
               bw.write("-----------------------------------------------------------------------------");
@@ -650,7 +651,7 @@ public class wiegleb implements ActionListener{
                         
                         txtResultados.setText("[N.games = " + Integer.toString(nG) + "] " + "[Run time = " + df1.format(tempo/3600.0)+ "hs = " + Long.toString(tempo/60) + "min]\n");
                         
-                        txtResultados.append("\n[Scores(%) =  " + perc.format(score1/ss) +"] " +  "[Total score = " + score1 +"] " +    "[Score/min = " + perc.format(score)+"]\n");
+                        txtResultados.append("\n[Total score(%) =  " + perc.format(score1/ss) +"] " +  "[Total score = " + score1 +"] " +    "[Score/min = " + perc.format(score)+"]\n");
                         
                         txtResultados.append("\nAlfa = " + df.format(alfa) + "    Explor. = " + df.format(aleat)+"\n");
                         
