@@ -69,7 +69,7 @@ public class wiegleb implements ActionListener{
   
   DecimalFormat df,df1;
   
-  int NEP,NW;
+  int NEP,NW,COL;
   
   long start;
   
@@ -124,6 +124,8 @@ public class wiegleb implements ActionListener{
       this.b0 = new Board();
       
       b0.inicializa();
+      
+      COL= b0.getCol();
       
       Border border = LineBorder.createGrayLineBorder();
       
@@ -285,9 +287,9 @@ public class wiegleb implements ActionListener{
       centerRenderer.setHorizontalAlignment( JLabel.CENTER );
       
       for(int i=0;i<9;i++)
-          tBoard.getColumnModel().getColumn(i).setCellRenderer( centerRenderer );
-      
-      
+          tBoard.getColumnModel().getColumn(i).setCellRenderer(centerRenderer );
+ 
+           
       panelResultados.add(txtResultados);
       panelResultados.add(tBoard);
   
@@ -429,51 +431,52 @@ public class wiegleb implements ActionListener{
       
   }
   
-  void salvarResultados(File corrida,int nG,Board b,ArrayList<Integer> rota)
+  void salvarResultados(Board b,int mov,boolean firstMove)
   {
       try{
           
-          FileWriter fw1 = new FileWriter(corrida, true);
+          FileWriter fw1;
+          
+          if(firstMove)
+              fw1 =  new FileWriter(corrida);
+          else
+              fw1 =  new FileWriter(corrida,true);
           
           try (BufferedWriter bw = new BufferedWriter(fw1)) {
-              bw.write("================================================================ episodio: " + String.valueOf(nG));
+              
               bw.newLine();
               bw.write("----------------------------------");
               bw.newLine();
-              bw.write("   " + b.getX(0)  + b.getX(1) + b.getX(2));
+              bw.write("  012345678");
               bw.newLine();
-              bw.write("   " + b.getX(3)  + b.getX(4) +  b.getX(5));
+              bw.write("0 " +"    " + b.getX(0)  + b.getX(1) + b.getX(2));
               bw.newLine();
-              bw.write("   " + b.getX(6) +  b.getX(7) +  b.getX(8));
+              bw.write("1 " +"    " + b.getX(3)  + b.getX(4) +  b.getX(5));
               bw.newLine();
-              bw.write(b.getX(9) +  b.getX(10)  + b.getX(11)  + b.getX(12)  + b.getX(13)+ b.getX(14)+  b.getX(15) +  b.getX(16) +b.getX(17));
+              bw.write("2 "+"   " + b.getX(6) +  b.getX(7) +  b.getX(8));
               bw.newLine();
-              bw.write(b.getX(18) +  b.getX(19)  + b.getX(20)  + b.getX(21)  + b.getX(22) + b.getX(23) + b.getX(24) + b.getX(25)+  b.getX(26));
+              bw.write("3 "+ b.getX(9) +  b.getX(10)  + b.getX(11)  + b.getX(12)  + b.getX(13)+ b.getX(14)+  b.getX(15) +  b.getX(16) +b.getX(17));
               bw.newLine();
-              bw.write(b.getX(27)  + b.getX(28)  + b.getX(29)  + b.getX(30)  + b.getX(31) + b.getX(32) + b.getX(33) + b.getX(34)+ b.getX(35));
+              bw.write("4 " + b.getX(18) +  b.getX(19)  + b.getX(20)  + b.getX(21)  + b.getX(22) + b.getX(23) + b.getX(24) + b.getX(25)+  b.getX(26));
               bw.newLine();
-              bw.write("   " + b.getX(36)  + b.getX(37) +  b.getX(38));
+              bw.write("5 " + b.getX(27)  + b.getX(28)  + b.getX(29)  + b.getX(30)  + b.getX(31) + b.getX(32) + b.getX(33) + b.getX(34)+ b.getX(35));
               bw.newLine();
-              bw.write("   " + b.getX(39) +  b.getX(40) +  b.getX(41));
+              bw.write("6 " +"    " + b.getX(36)  + b.getX(37) +  b.getX(38));
               bw.newLine();
-              bw.write("   " + b.getX(42) +  b.getX(43) +  b.getX(44));
+              bw.write("7 " +"    " + b.getX(39) +  b.getX(40) +  b.getX(41));
+              bw.newLine();
+              bw.write("8 " +"    " + b.getX(42) +  b.getX(43) +  b.getX(44));
               bw.newLine();
               bw.write("----------------------------------");
               bw.newLine();
               
+              int[] a = ut.moveToLocation(b.getMov(mov)[0],COL);
+              int[] z = ut.moveToLocation(b.getMov(mov)[2],COL);
               
-              if(rota.size() > 0) {
-                  bw.write("rota Otima:");
-                  bw.newLine();
-                          
-                  for(int i=0;i<rota.size();i++)
-                      bw.write("(" + String.valueOf(rota.get(i)) + ")");
-                  
-                  bw.newLine();
-                  
-              }
+              bw.write("move = " + "(" + String.valueOf(a[0]) + "," + String.valueOf(a[1]) + ")" + " -> " + "(" + String.valueOf(z[0]) + "," + String.valueOf(z[1]) + ")");
+              bw.newLine();
               
-              
+              bw.write("-----------------------------------------------------------------------------");
           }
       }catch(IOException e) {System.out.println("Arquivo nao encontrado");}
   }
@@ -484,24 +487,32 @@ public class wiegleb implements ActionListener{
      
      if(rota.size() > 0){
          
-         System.out.println("============================= PUZZLE SOLVED =================================== ");
-         
+                
          Board b = new Board();
          
          b.inicializa();
          
-         b.printBoard();
+         int mov = rota.get(0);
          
-         for(int i=0;i<rota.size();i++){
-             int mov = rota.get(i);
+         b.setMove(mov);         
+         
+         boolean firstMove=true;
+         
+         salvarResultados(b,mov,firstMove);
+
+         firstMove=false;
+         
+         for(int i=1;i<rota.size();i++){
+             
+             mov = rota.get(i);
              
              b.setMove(mov);
              
-             b.printBoard();
+             salvarResultados(b,mov,firstMove);
              
-             b.imprimeMove(mov);
+             //b.imprimeMove(mov);
              
-             System.out.println("-----------------------------");
+             //System.out.println("-----------------------------");
              
          }
      } 
@@ -539,7 +550,7 @@ public class wiegleb implements ActionListener{
                 if(chkLer.isSelected())
                     td.readingWeights();
                 
-                corrida = new File("corrida.log");
+                corrida = new File("puzzleSolved.log");
                 
                 double score=0;
                 
@@ -611,7 +622,7 @@ public class wiegleb implements ActionListener{
                         
                         double ss = score1+score2;
                         
-                        salvarResultados(corrida,nG,b,rotaOtima);
+                        
                         
                         int wT = td.freqMais1()+td.freqMenos1();
                         
@@ -637,7 +648,7 @@ public class wiegleb implements ActionListener{
                         df1 = new DecimalFormat("0.##");
                         
                         
-                        txtResultados.setText("[N.games = " + Integer.toString(nG) + "] " + "[Run time = " + df1.format(tempo/3600.0)+ "hs;" + Long.toString(tempo/60) + "min]\n");
+                        txtResultados.setText("[N.games = " + Integer.toString(nG) + "] " + "[Run time = " + df1.format(tempo/3600.0)+ "hs = " + Long.toString(tempo/60) + "min]\n");
                         
                         txtResultados.append("\n[Scores(%) =  " + perc.format(score1/ss) +"] " +  "[Total score = " + score1 +"] " +    "[Score/min = " + perc.format(score)+"]\n");
                         
@@ -672,10 +683,11 @@ public class wiegleb implements ActionListener{
                     
                 }
                 
-                if(chkSalvar.isSelected())
+                if(score >= 80 && chkSalvar.isSelected())
                     td.savingWeights();
                 
-                showSolution(rotaOtima);
+                showSolution(rotaOtima);          
+                
                 
                 JOptionPane.showMessageDialog(frame, "****** OK *****");
                 
@@ -683,25 +695,7 @@ public class wiegleb implements ActionListener{
         }
     }
     
-  void showBoard(Board b){
-              txtBoard.setText("\n" + "     " + b.getX(0)  + b.getX(1) + b.getX(2));
-   
-              txtBoard.append("\n" +  "     " + b.getX(3)  + b.getX(4) +  b.getX(5));
-              
-              txtBoard.append("\n" +  "     " + b.getX(6) +  b.getX(7) +  b.getX(8));
-             
-              txtBoard.append("\n" + b.getX(9) +  b.getX(10)  + b.getX(11)  + b.getX(12)  + b.getX(13)+ b.getX(14)+  b.getX(15) +  b.getX(16) +b.getX(17));
-              
-              txtBoard.append("\n" + b.getX(18) +  b.getX(19)  + b.getX(20)  + b.getX(21)  + b.getX(22) + b.getX(23) + b.getX(24) + b.getX(25)+  b.getX(26));
-              
-              txtBoard.append("\n" + b.getX(27)  + b.getX(28)  + b.getX(29)  + b.getX(30)  + b.getX(31) + b.getX(32) + b.getX(33) + b.getX(34)+ b.getX(35));
-              
-              txtBoard.append("\n     " + b.getX(36)  + b.getX(37) +  b.getX(38));
-             
-              txtBoard.append("\n     " + b.getX(39) +  b.getX(40) +  b.getX(41));
-             
-              txtBoard.append("\n     " + b.getX(42) +  b.getX(43) +  b.getX(44));  
-    }
+
     
   private DefaultTableModel  createTable(Board b){
         
@@ -710,15 +704,17 @@ public class wiegleb implements ActionListener{
         for(int i=0;i<9;i++)
            model.addColumn("col" + String.valueOf(i));
         
-        model.addRow(new Object[]{" "," "," ",b.getX(0),b.getX(1),b.getX(2)," "," "," "});
-        model.addRow(new Object[]{" "," "," ",b.getX(3),b.getX(4),b.getX(5)," "," "," "});
-        model.addRow(new Object[]{" "," "," ",b.getX(6),b.getX(7),b.getX(8)," "," "," "});
+        model.addRow(new Object[]{"####","####","####",b.getX(0),b.getX(1),b.getX(2),"####","####","####"});
+        model.addRow(new Object[]{"####","####","####",b.getX(3),b.getX(4),b.getX(5),"####","####","####"});
+        model.addRow(new Object[]{"####","####","####",b.getX(6),b.getX(7),b.getX(8),"####","####","####"});
         model.addRow(new Object[]{b.getX(9),b.getX(10),b.getX(11),b.getX(12),b.getX(13),b.getX(14),b.getX(15),b.getX(16),b.getX(17)});
         model.addRow(new Object[]{b.getX(18),b.getX(19),b.getX(20),b.getX(21),b.getX(22),b.getX(23),b.getX(24),b.getX(25),b.getX(26)});
         model.addRow(new Object[]{b.getX(27),b.getX(28),b.getX(29),b.getX(30),b.getX(31),b.getX(32),b.getX(33),b.getX(34),b.getX(35)});
-        model.addRow(new Object[]{" "," "," ",b.getX(36),b.getX(37),b.getX(38)," "," "," "});
-        model.addRow(new Object[]{" "," "," ",b.getX(39),b.getX(40),b.getX(41)," "," "," "});
-        model.addRow(new Object[]{" "," "," ",b.getX(42),b.getX(43),b.getX(44)," "," "," "});  
+        model.addRow(new Object[]{"####","####","####",b.getX(36),b.getX(37),b.getX(38),"####","####","####"});
+        model.addRow(new Object[]{"####","####","####",b.getX(39),b.getX(40),b.getX(41),"####","####","####"});
+        model.addRow(new Object[]{"####","####","####",b.getX(42),b.getX(43),b.getX(44),"####","####","####"});  
+        
+        
         
         return model;
     }
@@ -769,9 +765,13 @@ public class wiegleb implements ActionListener{
         
         tBoard.getModel().setValueAt(b.getX(42), 8, 3);
         tBoard.getModel().setValueAt(b.getX(43), 8, 4);
-        tBoard.getModel().setValueAt(b.getX(44), 8, 5);        
+        tBoard.getModel().setValueAt(b.getX(44), 8, 5);       
         
   }
+  //------------------------------------------------------
+ 
+ 
+ 
 }
 
 

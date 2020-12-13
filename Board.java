@@ -15,6 +15,8 @@ import java.util.Scanner;
  * @author Marco Victorino
  */
 public class Board {
+    final int COL=9;
+    
     final int NCEL=45;
     final int NTUPLE,NW,NVAL,LTUPLE;
     final int POWER=2;
@@ -74,10 +76,14 @@ public class Board {
     
     String getX(int i){
         
-        String[] w = {" ","x"};
+        String[] w = {".","o"};
         
         return w[x[i]];
         
+    }
+    
+    int[] getMov(int i){
+        return m[i];
     }
     //--------------------------------------------------------------------------
     void inicializa(){
@@ -103,6 +109,9 @@ public class Board {
     }
     int getNcel(){
         return NCEL;
+    }
+    int getCol(){
+        return COL;
     }
     int getItem(int k){
         return x[k];

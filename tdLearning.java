@@ -95,7 +95,7 @@ public class tdLearning {
         
         try{
             
-            FileWriter fw = new FileWriter(arq, true);
+            FileWriter fw = new FileWriter(arq);
             
             try (BufferedWriter bw = new BufferedWriter(fw)) {
                 for(int i=0;i<NW;i++){

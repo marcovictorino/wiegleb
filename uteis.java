@@ -63,4 +63,12 @@ public class uteis {
         
         System.out.println();
     }
+    
+    int[] moveToLocation(int k,int COL){
+        int[] a = new int[2];
+        a[0] = k/COL;
+        a[1] = k%COL;
+        
+        return a;
+    }
 }
