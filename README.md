@@ -9,5 +9,5 @@ Features:
 - Exploration rate start at 0.1 and decays gaussian.
 - The global learning rate decays exponentially from 0.005 to 0.002.
 - The Gui application wiegleb.java need  JFreeChart package to show graphics.
-- The algorithm always find a solution in less than 10min and saves in puzzleSolved.log file, and sometimes the algorithm "learns"
+- The algorithm always find a solution in less than 10min(Core i5 Cpu) and saves the results in puzzleSolved.log file, and sometimes the algorithm "learns"
 the solutions. When this happens the 8.192 weights are saved in weight.dat file.
