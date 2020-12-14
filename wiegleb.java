@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -59,7 +61,7 @@ public class wiegleb implements ActionListener{
   
   BufferedReader reader;
   
-  File parametros,corrida;
+  File parametros,corrida,histRotas;
   
   uteis ut;
   
@@ -380,6 +382,7 @@ public class wiegleb implements ActionListener{
           else
               System.out.printf("(%d)",x.get(i));
       }
+      System.out.println();
       
   }
   //------------------------------------------------------
@@ -518,7 +521,63 @@ public class wiegleb implements ActionListener{
          }
      } 
   }
+  //---------------------------------------------------
+  void showSolution1(ArrayList<Integer> rota,tdLearning td){
+      
+     double[] v = new double[rota.size()]; 
+     
+     if(rota.size() > 0){
+         
+                
+         Board b = new Board();
+         
+         b.inicializa();
 
+         for(int i=0;i<rota.size();i++){
+             
+             int mov = rota.get(i);
+             
+             b.setMove(mov);
+             
+             v[i] = b.calcV(td.getW());
+             
+             
+             
+             //b.imprimeMove(mov);
+             
+             //System.out.println("-----------------------------");
+             
+         }
+         
+         salvaResultados1(rota,v);
+     } 
+  }  
+          
+      
+
+  //-----------------------------------------------------------
+  void salvaResultados1(ArrayList<Integer> rota,double[] v){
+      try{
+          
+          FileWriter fw1 = new FileWriter(histRotas,true);
+          
+          try (BufferedWriter bw = new BufferedWriter(fw1)) {
+              
+            for(int i=0;i<rota.size();i++)
+               bw.write("(" + String.valueOf(rota.get(i)) + "|" + df.format(v[i]) + ")");
+            
+          
+            bw.newLine();
+            bw.write("-----------------------------------------------------------------");
+            bw.newLine();
+          }  
+          
+          
+          
+      }catch(IOException e) {System.out.println("Arquivo nao encontrado");}
+  }
+  
+  //-----------------------------------------------------------
   private class RunnableImpl implements Runnable {
 
         public RunnableImpl() {
@@ -541,11 +600,16 @@ public class wiegleb implements ActionListener{
                 
                 ArrayList<Double> histAleat = new ArrayList<>();
                 
+                
+                
+                
+                
                 playerResta1 p1 = new playerResta1();
                 
                 tdLearning td = new tdLearning(NW,GAMMA,LAMBDA);
                 
                 double score1=0,score2=0,scoreBack=0;
+                
                 int intervBack=0;
                 
                 if(chkLer.isSelected())
@@ -553,11 +617,15 @@ public class wiegleb implements ActionListener{
                 
                 corrida = new File("puzzleSolved.log");
                 
+                histRotas = new File("rotas.log");
+                
                 double score=0;
                 
                 NumberFormat perc = NumberFormat.getPercentInstance();
+                
                 perc.setMinimumFractionDigits(2);
 
+                
                 
                 //----------------------------------------------
                 for(int nG=0;nG<NEP;nG++){
@@ -567,12 +635,12 @@ public class wiegleb implements ActionListener{
                     b.inicializa();
                     
                     rota.clear();movAleat.clear();
-                    
-                    
+      
                     double aleat = ut.gaussianDecai(nG,aleatIn,GAUSSIANK);
                     
                     double alfa = ut.ExpDecai(nG,NEP,alfaIn,alfaFim);
                     
+                    //-----------------------------------------------------
                     while(true){
                         
                         Board bOld = new Board();
@@ -584,8 +652,8 @@ public class wiegleb implements ActionListener{
                         
                         b.setMove(choice);
                         
-                        rota.add(choice);
-                        
+                        rota.add(choice);                    
+                 
                         if(p1.getFgreed() == false)
                             movAleat.add(choice);
                         
@@ -600,9 +668,11 @@ public class wiegleb implements ActionListener{
                     
                     if(b.calcR1() == 1){
                         score1 +=1;
-                        rotaOtima.clear();
-                        for(int i=0;i<rota.size();i++)
-                            rotaOtima.add(rota.get(i));
+                        rotaOtima.clear();                        
+                        
+                        for(int i=0;i<rota.size();i++){
+                            rotaOtima.add(rota.get(i));                           
+                        }    
                     }
                     else
                         score2+=1;
@@ -611,20 +681,20 @@ public class wiegleb implements ActionListener{
                     
                     var tempo = (end-start)/1000;
                     
+                    //-----------------------------------------------------
                     if(end/1000 % 60 == 0){
                                  
                         
                         updateTable(b);
                         
+                        //imprime_x(rota,movAleat);
                         
                         double deltaScore = score1 - scoreBack;
                         
                         int interv = nG - intervBack;
                         
                         double ss = score1+score2;
-                        
-                        
-                        
+      
                         int wT = td.freqMais1()+td.freqMenos1();
                         
                         scoreBack = score1;intervBack = nG;
@@ -673,18 +743,21 @@ public class wiegleb implements ActionListener{
                             txtResultados.append("(move: " + String.valueOf(key) + " -> value: " + df.format(mapaInicial.get(key)) + ")");
                         });
                         
+                        if(rotaOtima.size()>0)
+                          showSolution1(rotaOtima,td);
+                        
                         try { Thread.sleep (1000); } catch (InterruptedException ex) {}
                         
                     }
                     
-                    if(score >= 0.90){
+                    if(score >= 0.80){
                         txtResultados.append("\n[Score/min = " + perc.format(score)+ "]" );
                         break;
                     }
                     
                 }
                 
-                if(score >= 80 && chkSalvar.isSelected())
+                if(chkSalvar.isSelected())
                     td.savingWeights();
                 
                 showSolution(rotaOtima);          
