@@ -599,11 +599,7 @@ public class wiegleb implements ActionListener{
                 ArrayList<Double> histScore = new ArrayList<>();
                 
                 ArrayList<Double> histAleat = new ArrayList<>();
-                
-                
-                
-                
-                
+ 
                 playerResta1 p1 = new playerResta1();
                 
                 tdLearning td = new tdLearning(NW,GAMMA,LAMBDA);
@@ -682,7 +678,7 @@ public class wiegleb implements ActionListener{
                     var tempo = (end-start)/1000;
                     
                     //-----------------------------------------------------
-                    if(end/1000 % 60 == 0){
+                    if(end/1000 % 30 == 0){
                                  
                         
                         updateTable(b);
